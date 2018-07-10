@@ -163,7 +163,7 @@ private fun renderImportName(fqName: FqName, isOnDemand: Boolean)
 
 private val DEFAULT_IMPORTS_SET: Set<FqName> = JvmPlatform.getDefaultImports(
     // TODO: use the correct LanguageVersionSettings instance here
-    LanguageVersionSettingsImpl.DEFAULT.supportsFeature(LanguageFeature.DefaultImportOfPackageKotlinComparisons),
+    LanguageVersionSettingsImpl.DEFAULT,
     includeLowPriorityImports = true
 ).filter { it.isAllUnder }.map { it.fqName }.toSet()
 
