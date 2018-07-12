@@ -20,17 +20,22 @@ import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.metadata.ProtoBuf
+import org.jetbrains.kotlin.metadata.deserialization.BinaryVersion
 import org.jetbrains.kotlin.metadata.js.JsProtoBuf
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.source.PsiSourceFile
 import org.jetbrains.kotlin.serialization.KotlinSerializerExtensionBase
 import org.jetbrains.kotlin.types.FlexibleType
+import org.jetbrains.kotlin.utils.JsMetadataVersion
 
 class KotlinJavascriptSerializerExtension(
     private val fileRegistry: KotlinFileRegistry,
     private val languageVersionSettings: LanguageVersionSettings
 ) : KotlinSerializerExtensionBase(JsSerializerProtocol) {
+    override val metadataVersion: BinaryVersion
+        get() = JsMetadataVersion.INSTANCE
+
     override val stringTable = JavaScriptStringTable()
 
     override fun serializeFlexibleType(flexibleType: FlexibleType, lowerProto: ProtoBuf.Type.Builder, upperProto: ProtoBuf.Type.Builder) {

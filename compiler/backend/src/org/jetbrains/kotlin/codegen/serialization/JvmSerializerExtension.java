@@ -21,8 +21,10 @@ import org.jetbrains.kotlin.load.java.JvmAbi;
 import org.jetbrains.kotlin.load.java.lazy.types.RawTypeImpl;
 import org.jetbrains.kotlin.load.kotlin.TypeSignatureMappingKt;
 import org.jetbrains.kotlin.metadata.ProtoBuf;
+import org.jetbrains.kotlin.metadata.deserialization.BinaryVersion;
 import org.jetbrains.kotlin.metadata.jvm.JvmProtoBuf;
 import org.jetbrains.kotlin.metadata.jvm.deserialization.ClassMapperLite;
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmMetadataVersion;
 import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil;
 import org.jetbrains.kotlin.name.ClassId;
 import org.jetbrains.kotlin.name.FqName;
@@ -63,6 +65,12 @@ public class JvmSerializerExtension extends SerializerExtension {
         this.moduleName = state.getModuleName();
         this.classBuilderMode = state.getClassBuilderMode();
         this.isReleaseCoroutines = state.getLanguageVersionSettings().supportsFeature(LanguageFeature.ReleaseCoroutines);
+    }
+
+    @NotNull
+    @Override
+    public BinaryVersion getMetadataVersion() {
+        return JvmMetadataVersion.INSTANCE;
     }
 
     @NotNull
