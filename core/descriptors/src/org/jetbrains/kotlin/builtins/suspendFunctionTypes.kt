@@ -89,7 +89,7 @@ fun transformRuntimeFunctionTypeToSuspendFunction(funType: KotlinType, isRelease
     if (!isContinuation(continuationArgumentType.constructor.declarationDescriptor?.fqNameSafe, isReleaseCoroutines) ||
         continuationArgumentType.arguments.size != 1
     ) {
-        return null
+        return funType as? SimpleType
     }
 
     val suspendReturnType = continuationArgumentType.arguments.single().type
@@ -106,7 +106,7 @@ fun transformRuntimeFunctionTypeToSuspendFunction(funType: KotlinType, isRelease
     ).makeNullableAsSpecified(funType.isMarkedNullable)
 }
 
-private fun isContinuation(name: FqName?, isReleaseCoroutines: Boolean): Boolean {
+fun isContinuation(name: FqName?, isReleaseCoroutines: Boolean): Boolean {
     return if (isReleaseCoroutines) name == DescriptorUtils.CONTINUATION_INTERFACE_FQ_NAME_RELEASE
     else name == DescriptorUtils.CONTINUATION_INTERFACE_FQ_NAME_EXPERIMENTAL
 }

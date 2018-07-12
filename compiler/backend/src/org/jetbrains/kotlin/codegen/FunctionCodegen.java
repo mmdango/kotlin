@@ -23,7 +23,6 @@ import org.jetbrains.kotlin.codegen.coroutines.SuspendFunctionGenerationStrategy
 import org.jetbrains.kotlin.codegen.coroutines.SuspendInlineFunctionGenerationStrategy;
 import org.jetbrains.kotlin.codegen.state.GenerationState;
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper;
-import org.jetbrains.kotlin.codegen.state.TypeMapperUtilsKt;
 import org.jetbrains.kotlin.config.JvmDefaultMode;
 import org.jetbrains.kotlin.config.JvmTarget;
 import org.jetbrains.kotlin.config.LanguageFeature;
@@ -39,7 +38,6 @@ import org.jetbrains.kotlin.load.java.JvmAbi;
 import org.jetbrains.kotlin.load.java.SpecialBuiltinMembers;
 import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor;
 import org.jetbrains.kotlin.name.FqName;
-import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.psi.*;
 import org.jetbrains.kotlin.resolve.BindingContext;
 import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils;
@@ -179,8 +177,7 @@ public class FunctionCodegen {
             @NotNull FunctionGenerationStrategy strategy
     ) {
         if (CoroutineCodegenUtilKt.isSuspendFunctionNotSuspensionView(descriptor)) {
-            generateMethod(origin, CoroutineCodegenUtilKt.getOrCreateJvmSuspendFunctionView(descriptor, state.getLanguageVersionSettings()
-                    .supportsFeature(LanguageFeature.ReleaseCoroutines), bindingContext), strategy);
+            generateMethod(origin, CoroutineCodegenUtilKt.getOrCreateJvmSuspendFunctionView(descriptor, state), strategy);
             return;
         }
 
@@ -295,8 +292,7 @@ public class FunctionCodegen {
         // descriptor corresponds to the underlying value
         if (functionDescriptor instanceof PropertyAccessorDescriptor) {
             PropertyDescriptor property = ((PropertyAccessorDescriptor) functionDescriptor).getCorrespondingProperty();
-            // property for the underlying value
-            if (JvmCodegenUtil.hasBackingField(property, contextKind, bindingContext)) {
+            if (InlineClassesUtilsKt.isUnderlyingPropertyOfInlineClass(property)) {
                 return false;
             }
         }
@@ -677,8 +673,7 @@ public class FunctionCodegen {
         if (functionDescriptor instanceof AnonymousFunctionDescriptor && functionDescriptor.isSuspend()) {
             functionDescriptor = CoroutineCodegenUtilKt.getOrCreateJvmSuspendFunctionView(
                     functionDescriptor,
-                    parentCodegen.state.getLanguageVersionSettings().supportsFeature(LanguageFeature.ReleaseCoroutines),
-                    typeMapper.getBindingContext()
+                    parentCodegen.state
             );
         }
 
@@ -692,7 +687,10 @@ public class FunctionCodegen {
                 }
             } else {
                 FunctionDescriptor lambdaDescriptor = ((ClosureContext) context.getParentContext()).getOriginalSuspendLambdaDescriptor();
-                if (lambdaDescriptor != null && functionDescriptor.getName().equals(Name.identifier("doResume"))) {
+                if (lambdaDescriptor != null &&
+                    CoroutineCodegenUtilKt.isResumeImplMethodName(
+                            parentCodegen.state.getLanguageVersionSettings(), functionDescriptor.getName().asString()
+                    )) {
                     destructuredParametersForSuspendLambda.addAll(lambdaDescriptor.getValueParameters());
                 }
             }
@@ -758,7 +756,7 @@ public class FunctionCodegen {
             @NotNull List<ValueParameterDescriptor> destructuredParametersForSuspendLambda,
             int shiftForDestructuringVariables
     ) {
-        if (functionDescriptor.isSuspend()) {
+        if (functionDescriptor.isSuspend() && !(functionDescriptor instanceof AnonymousFunctionDescriptor)) {
             FunctionDescriptor unwrapped = CoroutineCodegenUtilKt.unwrapInitialDescriptorForSuspendFunction(
                     functionDescriptor
             );

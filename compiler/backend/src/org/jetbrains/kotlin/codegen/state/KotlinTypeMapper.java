@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.builtins.BuiltInsPackageFragment;
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns;
 import org.jetbrains.kotlin.builtins.functions.FunctionClassDescriptor;
+import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap;
 import org.jetbrains.kotlin.codegen.*;
 import org.jetbrains.kotlin.codegen.binding.CodegenBinding;
 import org.jetbrains.kotlin.codegen.binding.MutableClosure;
@@ -41,7 +42,6 @@ import org.jetbrains.kotlin.load.kotlin.*;
 import org.jetbrains.kotlin.load.kotlin.incremental.IncrementalPackageFragmentProvider.IncrementalMultifileClassPackageFragment;
 import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmBytecodeBinaryVersion;
 import org.jetbrains.kotlin.name.*;
-import org.jetbrains.kotlin.platform.JavaToKotlinClassMap;
 import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.psi.KtFunctionLiteral;
@@ -948,7 +948,8 @@ public class KotlinTypeMapper {
     }
 
     public static boolean isAccessor(@Nullable CallableMemberDescriptor descriptor) {
-        return descriptor instanceof AccessorForCallableDescriptor<?>;
+        return descriptor instanceof AccessorForCallableDescriptor<?> ||
+                descriptor instanceof AccessorForCompanionObjectInstanceFieldDescriptor;
     }
 
     public static boolean isStaticAccessor(@Nullable CallableMemberDescriptor descriptor) {
@@ -1606,9 +1607,7 @@ public class KotlinTypeMapper {
     @NotNull
     public JvmMethodSignature mapScriptSignature(
             @NotNull ScriptDescriptor script,
-            @NotNull List<ScriptDescriptor> importedScripts,
-            List<? extends KType> implicitReceivers,
-            List<? extends Pair<String, ? extends KType>> environmentVariables
+            @NotNull List<ScriptDescriptor> importedScripts
     ) {
         JvmSignatureWriter sw = new BothSignatureWriter(BothSignatureWriter.Mode.METHOD);
 
@@ -1616,14 +1615,6 @@ public class KotlinTypeMapper {
 
         if (importedScripts.size() > 0) {
             writeParameter(sw, DescriptorUtilsKt.getModule(script).getBuiltIns().getArray().getDefaultType(), null);
-        }
-
-        if (implicitReceivers.size() > 0) {
-            writeParameter(sw, DescriptorUtilsKt.getModule(script).getBuiltIns().getArray().getDefaultType(), null);
-        }
-
-        if (environmentVariables.size() > 0) {
-            writeParameter(sw, DescriptorUtilsKt.getModule(script).getBuiltIns().getMap().getDefaultType(), null);
         }
 
         for (ValueParameterDescriptor valueParameter : script.getUnsubstitutedPrimaryConstructor().getValueParameters()) {

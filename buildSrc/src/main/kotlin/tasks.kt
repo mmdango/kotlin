@@ -30,7 +30,8 @@ import java.lang.Character.isUpperCase
 
 fun Project.projectTest(taskName: String = "test", body: Test.() -> Unit = {}): Test = getOrCreateTask(taskName) {
     doFirst {
-        val patterns = filter.includePatterns + ((filter as? DefaultTestFilter)?.commandLineIncludePatterns ?: emptySet())
+        val commandLineIncludePatterns = (filter as? DefaultTestFilter)?.commandLineIncludePatterns ?: emptySet()
+        val patterns = filter.includePatterns + commandLineIncludePatterns
         if (patterns.isEmpty() || patterns.any { '*' in it }) return@doFirst
         patterns.forEach { pattern ->
             var isClassPattern = false
@@ -50,7 +51,13 @@ fun Project.projectTest(taskName: String = "test", body: Test.() -> Unit = {}): 
             val classFileName = "$classFileNameWithoutExtension.class"
 
             if (isClassPattern) {
-                filter.includePatterns.add("$pattern$*")
+                val innerClassPattern = "$pattern$*"
+                if (pattern in commandLineIncludePatterns) {
+                    commandLineIncludePatterns.add(innerClassPattern)
+                    (filter as? DefaultTestFilter)?.setCommandLineIncludePatterns(commandLineIncludePatterns)
+                } else {
+                    filter.includePatterns.add(innerClassPattern)
+                }
             }
 
             include {
@@ -87,7 +94,7 @@ fun Project.projectTest(taskName: String = "test", body: Test.() -> Unit = {}): 
     systemProperty("idea.is.unit.test", "true")
     systemProperty("idea.home.path", intellijRootDir().canonicalPath)
     environment("NO_FS_ROOTS_ACCESS_CHECK", "true")
-    environment("PROJECT_CLASSES_DIRS", javaPluginConvention().sourceSets.getByName("test").output.classesDirs.asPath)
+    environment("PROJECT_CLASSES_DIRS", testSourceSet.output.classesDirs.asPath)
     environment("PROJECT_BUILD_DIR", buildDir)
     systemProperty("jps.kotlin.home", rootProject.extra["distKotlinHomeDir"]!!)
     systemProperty("kotlin.ni", if (rootProject.hasProperty("newInferenceTests")) "true" else "false")

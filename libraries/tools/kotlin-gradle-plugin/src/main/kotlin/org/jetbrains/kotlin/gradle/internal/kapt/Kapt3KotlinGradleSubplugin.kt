@@ -21,6 +21,7 @@ import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.internal.Kapt3GradleSubplugin.Companion.getKaptGeneratedClassesDir
 import org.jetbrains.kotlin.gradle.internal.Kapt3GradleSubplugin.Companion.getKaptGeneratedKotlinSourcesDir
 import org.jetbrains.kotlin.gradle.internal.Kapt3GradleSubplugin.Companion.getKaptGeneratedSourcesDir
+import org.jetbrains.kotlin.gradle.internal.Kapt3KotlinGradleSubplugin.Companion.KAPT_WORKER_DEPENDENCIES_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.tasks.isWorkerAPISupported
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.tasks.CompilerPluginOptions
@@ -51,6 +52,15 @@ class Kapt3GradleSubplugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         project.extensions.create("kapt", KaptExtension::class.java)
+
+        Kapt3KotlinGradleSubplugin().run {
+            project.configurations.create(KAPT_WORKER_DEPENDENCIES_CONFIGURATION_NAME).apply {
+                project.getKotlinPluginVersion()?.let { kotlinPluginVersion ->
+                    val kaptDependency = getPluginArtifact().run { "$groupId:$artifactId:$kotlinPluginVersion" }
+                    dependencies.add(project.dependencies.create(kaptDependency))
+                } ?: project.logger.error("Kotlin plugin should be enabled before 'kotlin-kapt'")
+            }
+        }
     }
 }
 
@@ -261,18 +271,26 @@ class Kapt3KotlinGradleSubplugin : KotlinGradleSubplugin<KotlinCompile> {
         val apOptionsFromProviders =
             if (isGradleVersionAtLeast(4, 6))
                 kaptVariantData?.annotationProcessorOptionProviders
-                    ?.flatMap { (it as CommandLineArgumentProvider).asArguments().map { "" to it.removePrefix("-A") } }
+                    ?.flatMap { (it as CommandLineArgumentProvider).asArguments() }
                     .orEmpty()
             else
                 emptyList()
 
+        val subluginOptionsFromProvidedApOptions = apOptionsFromProviders.map {
+            // Use the internal subplugin option type to exclude them from Gradle input/output checks, as their providers are already
+            // properly registered as a nested input:
+
+            // Pass options as they are in the key-only form (key = 'a=b'), kapt will deal with them:
+            InternalSubpluginOption(key = it.removePrefix("-A"), value = "")
+        }
+
         val apOptionsPairsList: List<Pair<String, String>> =
             kaptExtension.getAdditionalArguments(project, kaptVariantData?.variantData, androidPlugin).toList() +
-                    androidOptions.toList() +
-                    apOptionsFromProviders
+                    androidOptions.toList()
 
         return apOptionsPairsList.map { SubpluginOption(it.first, it.second) } +
-                FilesSubpluginOption(KAPT_KOTLIN_GENERATED, listOf(kotlinSourcesOutputDir))
+                FilesSubpluginOption(KAPT_KOTLIN_GENERATED, listOf(kotlinSourcesOutputDir)) +
+                subluginOptionsFromProvidedApOptions
     }
 
     private fun Kapt3SubpluginContext.buildAndAddOptionsTo(task: Task, container: CompilerPluginOptions, aptMode: String) {
@@ -350,25 +368,16 @@ class Kapt3KotlinGradleSubplugin : KotlinGradleSubplugin<KotlinCompile> {
 
         kaptTask.kaptClasspathConfigurations = kaptClasspathConfigurations
 
-        if (kaptTask is KaptWithKotlincTask) {
-            kaptVariantData?.annotationProcessorOptionProviders?.let {
-                kaptTask.annotationProcessorOptionProviders.add(it)
-            }
+        kaptVariantData?.annotationProcessorOptionProviders?.let {
+            kaptTask.annotationProcessorOptionProviders.add(it)
+        }
 
+        if (kaptTask is KaptWithKotlincTask) {
             buildAndAddOptionsTo(kaptTask, kaptTask.pluginOptions, aptMode = "apt")
         }
 
         if (kaptTask is KaptWithoutKotlincTask) {
-            project.configurations.create(KAPT_WORKER_DEPENDENCIES_CONFIGURATION_NAME).apply {
-                project.getKotlinPluginVersion()?.let { kotlinPluginVersion ->
-                    val kaptDependency = getPluginArtifact().run { "$groupId:$artifactId:$kotlinPluginVersion" }
-                    dependencies.add(project.dependencies.create(kaptDependency))
-                } ?: project.logger.error("Kotlin plugin should be enabled before 'kotlin-kapt'")
-            }
-
             with(kaptTask) {
-                projectDir = project.projectDir
-
                 isVerbose = project.isKaptVerbose()
                 mapDiagnosticLocations = kaptExtension.mapDiagnosticLocations
                 annotationProcessorFqNames = kaptExtension.processors.split(',').filter { it.isNotEmpty() }

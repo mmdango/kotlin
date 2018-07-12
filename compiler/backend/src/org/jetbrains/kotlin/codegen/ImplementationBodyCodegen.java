@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.backend.common.CodegenUtil;
 import org.jetbrains.kotlin.backend.common.DataClassMethodGenerator;
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns;
+import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap;
+import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap.PlatformMutabilityMapping;
 import org.jetbrains.kotlin.codegen.binding.CodegenBinding;
 import org.jetbrains.kotlin.codegen.binding.MutableClosure;
 import org.jetbrains.kotlin.codegen.context.*;
@@ -33,8 +35,6 @@ import org.jetbrains.kotlin.load.kotlin.TypeMappingMode;
 import org.jetbrains.kotlin.name.ClassId;
 import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.name.Name;
-import org.jetbrains.kotlin.platform.JavaToKotlinClassMap;
-import org.jetbrains.kotlin.platform.JavaToKotlinClassMap.PlatformMutabilityMapping;
 import org.jetbrains.kotlin.psi.*;
 import org.jetbrains.kotlin.resolve.*;
 import org.jetbrains.kotlin.resolve.calls.callUtil.CallUtilKt;
@@ -537,6 +537,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         public void generateEqualsMethod(@NotNull FunctionDescriptor function, @NotNull List<? extends PropertyDescriptor> properties) {
             MethodContext context = ImplementationBodyCodegen.this.context.intoFunction(function);
             MethodVisitor mv = v.newMethod(JvmDeclarationOriginKt.OtherOrigin(function), ACC_PUBLIC, "equals", "(Ljava/lang/Object;)Z", null, null);
+            mv.visitParameterAnnotation(0, Type.getDescriptor(Nullable.class), false);
             InstructionAdapter iv = new InstructionAdapter(mv);
 
             mv.visitCode();
@@ -644,6 +645,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         public void generateToStringMethod(@NotNull FunctionDescriptor function, @NotNull List<? extends PropertyDescriptor> properties) {
             MethodContext context = ImplementationBodyCodegen.this.context.intoFunction(function);
             MethodVisitor mv = v.newMethod(JvmDeclarationOriginKt.OtherOrigin(function), ACC_PUBLIC, "toString", "()Ljava/lang/String;", null, null);
+            mv.visitAnnotation(Type.getDescriptor(NotNull.class), false);
             InstructionAdapter iv = new InstructionAdapter(mv);
 
             mv.visitCode();
