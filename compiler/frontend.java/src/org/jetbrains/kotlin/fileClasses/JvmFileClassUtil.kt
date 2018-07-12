@@ -109,6 +109,12 @@ val KtFile.javaFileFacadeFqName: FqName
             val facadeFqName =
                     if (isCompiled) packageFqName.child(Name.identifier(virtualFile.nameWithoutExtension))
                     else JvmFileClassUtil.getFileClassInfoNoResolve(this).facadeClassFqName
+
+            assert(Name.isValidIdentifier(facadeFqName.shortName().identifier)) {
+                "An invalid fqName `$facadeFqName` with short name `${facadeFqName.shortName()}` is created for file `$name` " +
+                        "(isCompiled = $isCompiled)"
+            }
+
             CachedValueProvider.Result(facadeFqName, this)
         }
     }
