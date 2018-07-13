@@ -1474,6 +1474,11 @@ public class DiagnosticsUsingJavacTestGenerated extends AbstractDiagnosticsUsing
                     runTest("compiler/testData/diagnostics/tests/annotations/withUseSiteTarget/SparamAnnotations.kt");
                 }
 
+                @TestMetadata("uselessUseSiteTargetAnnotationsOnJvm.kt")
+                public void testUselessUseSiteTargetAnnotationsOnJvm() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/annotations/withUseSiteTarget/uselessUseSiteTargetAnnotationsOnJvm.kt");
+                }
+
                 @TestMetadata("wrongParamAnnotationsOnTypesError.kt")
                 public void testWrongParamAnnotationsOnTypesError() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/annotations/withUseSiteTarget/wrongParamAnnotationsOnTypesError.kt");
