@@ -1,3 +1,4 @@
+// IGNORE_BACKEND: JVM, JVM_IR
 // !LANGUAGE: +FunctionTypesWithBigArity
 
 class A
