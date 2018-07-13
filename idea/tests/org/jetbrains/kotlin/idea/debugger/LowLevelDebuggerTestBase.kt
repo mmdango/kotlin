@@ -98,7 +98,7 @@ abstract class LowLevelDebuggerTestBase : CodegenTestCase() {
 
         val classpath = listOf(
             classesDir.absolutePath,
-            PathUtil.getJarPathForClass(Delegates::class.java)
+            PathUtil.getJarPathForClass(Delegates::class.java) // Add Kotlin runtime JAR
         )
 
         val command = arrayOf(
@@ -147,7 +147,7 @@ private fun File.mkdirAndWriteBytes(array: ByteArray) {
 
 private fun waitUntil(condition: () -> Boolean) {
     while (!condition()) {
-        Thread.sleep(100)
+        Thread.sleep(30)
     }
 }
 
@@ -161,6 +161,7 @@ private object DebuggerMain {
     fun main(args: Array<String>) {
         System.getProperty(CLASSES_TO_LOAD).split(',').forEach { Class.forName(it) }
         synchronized(lock) {
+            // Wait until debugger is attached
             @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
             (lock as java.lang.Object).wait()
         }
