@@ -159,7 +159,7 @@ class KotlinPositionManager(private val myDebugProcess: DebugProcess) : MultiReq
         }
 
         val sameLineLocations = location.safeMethod()?.safeAllLineLocations()?.filter {
-            it.safeLineNumber() == lineNumber && it.safeSourceName == fileName
+            it.safeLineNumber() == lineNumber && it.safeSourceName() == fileName
         }
 
         if (sameLineLocations != null) {
