@@ -1002,6 +1002,10 @@ fun main(args: Array<String>) {
             model("incremental/js-other/friendsModuleDisabled", extension = null, recursive = false)
         }
 
+        testClass<AbstractIncrementalJsCompilerRunnerEmptyClasspath> {
+            model("incremental/js-other/emptyClasspath", extension = null, recursive = false)
+        }
+
         testClass<AbstractIncrementalMultiplatformJvmCompilerRunnerTest> {
             model("incremental/multiplatform/singleModule", extension = null, excludeParentDirs = true)
         }
