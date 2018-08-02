@@ -22,7 +22,7 @@ class LoadedProcessors(val processors: List<Processor>, val classLoader: ClassLo
 open class ProcessorLoader(private val options: KaptOptions, private val logger: KaptLogger) : Closeable {
     private var annotationProcessingClassLoader: URLClassLoader? = null
 
-    fun loadProcessors(parentClassLoader: ClassLoader = ClassLoader.getSystemClassLoader()): LoadedProcessors {
+    fun loadProcessors(parentClassLoader: ClassLoader = javaClass.classLoader): LoadedProcessors {
         clearJarURLCache()
 
         val classpath = LinkedHashSet<File>().apply {
