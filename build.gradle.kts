@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 import proguard.gradle.ProGuardTask
 
 buildscript {
-    extra["defaultSnapshotVersion"] = "1.3-SNAPSHOT"
+    extra["defaultSnapshotVersion"] = "1.3.20-AIRBNB2"
 
     kotlinBootstrapFrom(BootstrapOption.TeamCity("1.3.20-dev-1708", onlySuccessBootstrap = false))
 
